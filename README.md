@@ -56,7 +56,18 @@ triage-backend/
 
 ---
 
-## 2. System Architecture & Data Flow
+## 2. Architectural Decisions: Why No MVC?
+
+The backend deliberately bypasses the traditional **Model-View-Controller (MVC)** design pattern in favor of a **Pipe-and-Filter (Sequential Pipeline)** architecture for several critical engineering reasons:
+
+1. **No Database Models**: MVC relies heavily on "Models" to represent database schemas and manage state (via ORMs like Sequelize or Mongoose). This triage system is **completely stateless**. It acts as an instant classification engine—taking in a request, processing it, and outputting JSON—without storing data in a persistent local database.
+2. **Decoupled View Presentation**: The backend is a pure, headless API. It serves no templates or visual markup (EJS, Pug, HTML). The "View" is completely isolated and handled separately by the React-based client dashboard (`triage-frontend/`).
+3. **Pipe-and-Filter Architecture fits the Problem Space**: A triage system is a sequence of transformations: raw stream -> parsed object -> extracted string -> sanitized string -> AI-classified payload -> validated schema -> final response. A linear, 8-layer pipeline orchestrator (`pipeline.js`) is far more cohesive, readable, and debuggable than controller delegation.
+4. **Serverless Portability**: Avoiding MVC boilerplate makes this codebase lightweight and modular. It is designed to be easily packaged and deployed as a single, high-performance serverless cloud function (e.g. AWS Lambda or Google Cloud Function).
+
+---
+
+## 3. System Architecture & Data Flow
 
 ```mermaid
 graph TD
@@ -90,7 +101,7 @@ graph TD
 
 ---
 
-## 3. AI Decisions Note
+## 4. AI Decisions Note
 
 ### A. Model + Tools Used
 * **Primary LLM**: `gpt-oss:120b` hosted on the Ollama Cloud service, selected for its balanced multilingual capability, advanced reasoning, and structural syntax compliance.
@@ -127,3 +138,8 @@ graph TD
 1. **Token-Level Window Truncation**: Replace simple character-based truncation with BPE token counting (like `tiktoken`) to accurately clip payloads before invoking the LLM, reducing latency and cost.
 2. **Dynamic Vector Few-Shot Selection**: Implement a lightweight vector database (or local cosine similarity embeddings search) to retrieve the most contextually relevant few-shot examples dynamically, instead of hardcoding static examples in the prompt.
 3. **Multi-Model Consensus Checking**: Add a lightweight, fast local classifier model (like a fine-tuned DistilBERT) to run parallel checks on priority/category, validating output alignment with the primary LLM.
+
+---
+
+
+
