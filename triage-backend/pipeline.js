@@ -78,23 +78,38 @@ export async function runTriagePipeline(rawBody) {
   };
 
   try {
-    // 1. Parsing Layer (safely parses JSON, never throws)
-    const parsingPhase = startPhase('JSON Parsing');
-    const parseResult = safeParseJson(rawBody);
-    parsingPhase.end();
-    
-    if (!parseResult.success) {
-      context.malformedInput = true;
-      return attachMeta(getFallbackResult(`Malformed JSON input: ${parseResult.error}`));
-    }
+    const trimmed = (rawBody || '').trim();
+    const isJsonLike = trimmed.startsWith('{') || trimmed.startsWith('[');
 
-    // 2. Extraction Layer (recursively searches for string leaves)
-    const extractionPhase = startPhase('Content Extraction');
-    const extractionResult = extractContent(parseResult.data);
-    context.noExtractableText = extractionResult.status === 'no_text_found';
-    context.extractedText = extractionResult.text || '';
-    context.hasCompetingCandidates = extractionResult.hasCompetingCandidates || false;
-    extractionPhase.end();
+    if (isJsonLike) {
+      // 1. Parsing Layer (safely parses JSON, never throws)
+      const parsingPhase = startPhase('JSON Parsing');
+      const parseResult = safeParseJson(rawBody);
+      parsingPhase.end();
+      
+      if (!parseResult.success) {
+        context.malformedInput = true;
+        return attachMeta(getFallbackResult(`Malformed JSON input: ${parseResult.error}`));
+      }
+
+      // 2. Extraction Layer (recursively searches for string leaves)
+      const extractionPhase = startPhase('Content Extraction');
+      const extractionResult = extractContent(parseResult.data);
+      context.noExtractableText = extractionResult.status === 'no_text_found';
+      context.extractedText = extractionResult.text || '';
+      context.hasCompetingCandidates = extractionResult.hasCompetingCandidates || false;
+      extractionPhase.end();
+    } else {
+      // Direct Plain Text Processing
+      const parsingPhase = startPhase('JSON Parsing');
+      parsingPhase.end();
+
+      const extractionPhase = startPhase('Content Extraction');
+      context.extractedText = rawBody || '';
+      context.noExtractableText = !context.extractedText.trim();
+      context.hasCompetingCandidates = false;
+      extractionPhase.end();
+    }
 
     if (context.noExtractableText) {
       return attachMeta(getFallbackResult('No extractable text found.'));

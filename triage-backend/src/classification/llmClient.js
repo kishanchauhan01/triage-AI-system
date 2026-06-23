@@ -103,10 +103,10 @@ export function validateResponse(rawJson) {
 export async function classifyText(text, options = {}) {
   const client = getLLMClient();
   const model = options.model || 'gpt-oss:120b';
-  
+
   // 1. Run prompt injection heuristic check before calling the LLM
   const isInjectionSuspected = detectInjection(text);
-  
+
   // 2. Build the triage prompt, passing isInjectionSuspected to include security warning context
   const prompt = buildTriagePrompt(text, isInjectionSuspected);
 

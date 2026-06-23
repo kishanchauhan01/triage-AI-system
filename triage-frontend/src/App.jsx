@@ -30,11 +30,15 @@ export default function App() {
       return;
     }
 
-    try {
-      JSON.parse(rawJson);
-    } catch (err) {
-      setError(`Local validation failed: Invalid JSON format. Details: ${err.message}`);
-      return;
+    const trimmed = rawJson.trim();
+    const isJsonLike = trimmed.startsWith('{') || trimmed.startsWith('[');
+    if (isJsonLike) {
+      try {
+        JSON.parse(rawJson);
+      } catch (err) {
+        setError(`Local validation failed: Invalid JSON format. Details: ${err.message}`);
+        return;
+      }
     }
 
     setLoading(true);
