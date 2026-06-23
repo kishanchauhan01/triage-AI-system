@@ -118,6 +118,7 @@ graph TD
   ```
   This creates a clear boundary between program instructions and untrusted data, making it difficult for adversarial payloads to escape context and hijack system commands.
 * **Multilingual Coercion**: Prompt directives explicitly command the model to output the `summary` and `suggested_action` strictly in English, regardless of the language detected inside the payload tags.
+* **LLM-Based Language Scalability**: The system does not rely on a static list of pre-configured translation scripts. Instead, it dynamically supports any language native to the underlying `gpt-oss:120b` model (including Spanish, French, Japanese, Gujarati, Chinese, German, Hindi, Arabic, Korean, Russian, Swedish, and others). The triage processing capability scales automatically as the host LLM's language comprehension expands.
 
 ### C. How We Handle Uncertainty and Bad Input
 * **Graceful Tree Traversal**: The JSON crawler traverses unknown nested object trees. It skips short values and system keys (like UUIDs or timestamps) using length/keyword penalty scoring, selecting only high-value user text.
